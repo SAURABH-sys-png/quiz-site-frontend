@@ -33,62 +33,28 @@ const ACTIONS = {
     label: 'End test',
     confirm: 'The test closes now and every attempt still in progress is submitted automatically.',
   },
+  restart: {
+    label: 'Restart test',
+    confirm:
+      'Every attempt, score and rank for this test is deleted permanently, and the test goes back to Draft with the same questions and settings. Then press Start now (or Publish) to run it again. Students taking it right now are sent back to their dashboard.',
+  },
+  delete: {
+    label: 'Delete test',
+    confirm:
+      'The test, all its questions and every attempt, score and rank are deleted permanently. Students taking it right now are sent back to their dashboard.',
+  },
 };
 
 function availableActions(status) {
-  return { draft: ['publish', 'start'], published: ['unpublish', 'start', 'end'], live: ['end'], ended: [] }[status];
+  return {
+    draft: ['publish', 'start'],
+    published: ['unpublish', 'start', 'end'],
+    live: ['end', 'restart'],
+    ended: ['restart'],
+  }[status];
 }
 
-/** One-tap switch: when on, participants can retake this test (as often as they like) while it is open. */
-function RetakeToggle({ test, onChanged, onError }) {
-  const [busy, setBusy] = useState(false);
-  const on = Boolean(test.settings?.allowRetakes);
-
-  async function toggle() {
-    setBusy(true);
-    onError(null);
-    try {
-      await api(`/admin/tests/${test.id}`, { method: 'PATCH', body: { settings: { allowRetakes: !on } } });
-      onChanged();
-    } catch (err) {
-      onError(errorMessage(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      disabled={busy}
-      onClick={toggle}
-      title={
-        on
-          ? 'Participants can take this test again after submitting. Tap to turn off.'
-          : 'Tap to let participants take this test again after submitting.'
-      }
-      className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-300 ring-inset hover:bg-slate-50 disabled:opacity-60"
-    >
-      <span
-        className={cx(
-          'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors',
-          on ? 'bg-emerald-500' : 'bg-slate-300',
-        )}
-        aria-hidden="true"
-      >
-        <span
-          className={cx(
-            'absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform',
-            on ? 'translate-x-4.5' : 'translate-x-0.5',
-          )}
-        />
-      </span>
-      Retakes {on ? 'on' : 'off'}
-    </button>
-  );
-}
+const DESTRUCTIVE = new Set(['end', 'restart', 'delete']);
 
 function QuestionsPanel({ test, questions, refresh }) {
   const navigate = useNavigate();
@@ -285,6 +251,7 @@ export function TestDetailPage() {
         return;
       }
       await api(`/admin/tests/${id}/${action}`, { method: 'POST' });
+      if (action === 'restart') setTab('questions');
       setPending(null);
       refresh();
     } catch (err) {
@@ -313,7 +280,6 @@ export function TestDetailPage() {
         }
         actions={
           <>
-            {t.status !== 'ended' && <RetakeToggle test={t} onChanged={refresh} onError={setActionError} />}
             {(t.status === 'live' || t.status === 'ended') && (
               <ButtonLink to={`/admin/tests/${id}/live`} variant="secondary">
                 Live dashboard
@@ -327,12 +293,15 @@ export function TestDetailPage() {
             {availableActions(t.status).map((a) => (
               <Button
                 key={a}
-                variant={a === 'end' ? 'danger' : a === 'unpublish' ? 'secondary' : 'primary'}
+                variant={DESTRUCTIVE.has(a) ? 'danger' : a === 'unpublish' ? 'secondary' : 'primary'}
                 onClick={() => setPending(a)}
               >
                 {ACTIONS[a].label}
               </Button>
             ))}
+            <Button variant="secondary" className="text-rose-600" onClick={() => setPending('delete')}>
+              Delete
+            </Button>
           </>
         }
       >
@@ -374,19 +343,12 @@ export function TestDetailPage() {
       {tab === 'settings' && (
         <Card className="p-5">
           <TestSettingsForm key={t.updatedAt} test={t} onSaved={refresh} />
-          {t.attempts.started === 0 && (
-            <div className="mt-8 border-t border-slate-200 pt-4">
-              <Button variant="danger" size="sm" onClick={() => setPending('delete')}>
-                Delete test
-              </Button>
-            </div>
-          )}
         </Card>
       )}
 
       <Modal
         open={Boolean(pending)}
-        title={pending === 'delete' ? 'Delete this test?' : `${ACTIONS[pending]?.label}?`}
+        title={`${ACTIONS[pending]?.label}?`}
         onClose={() => setPending(null)}
         footer={
           <>
@@ -394,20 +356,24 @@ export function TestDetailPage() {
               Cancel
             </Button>
             <Button
-              variant={pending === 'end' || pending === 'delete' ? 'danger' : 'primary'}
+              variant={DESTRUCTIVE.has(pending) ? 'danger' : 'primary'}
               loading={busy}
               onClick={() => runAction(pending)}
             >
-              {pending === 'delete' ? 'Delete' : ACTIONS[pending]?.label}
+              {ACTIONS[pending]?.label}
             </Button>
           </>
         }
       >
-        <p className="text-sm text-slate-700">
-          {pending === 'delete'
-            ? 'The test and all its questions will be deleted permanently.'
-            : ACTIONS[pending]?.confirm}
-        </p>
+        <div className="space-y-3 text-sm text-slate-700">
+          <p>{ACTIONS[pending]?.confirm}</p>
+          {(pending === 'restart' || pending === 'delete') && t.attempts.started > 0 && (
+            <Alert tone="warning" title={`${t.attempts.started} attempt(s) will be lost`}>
+              <p className="mb-2">Download the results first if you need them.</p>
+              <DownloadButton path={`/admin/tests/${id}/export.xlsx`}>Download results (.xlsx)</DownloadButton>
+            </Alert>
+          )}
+        </div>
       </Modal>
     </>
   );

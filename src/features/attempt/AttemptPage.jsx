@@ -160,7 +160,13 @@ function AttemptRunner({ testId, data }) {
   });
   useSocketEvent('leaderboard:update', (e) => e.testId === testId && setBoard(e.entries));
   useSocketEvent('test:status', (e) => {
-    if (e.testId === testId && e.status === 'ended') submit({ auto: true });
+    if (e.testId !== testId) return;
+    if (e.status === 'ended') submit({ auto: true });
+    // The admin restarted or deleted the test: this attempt no longer exists.
+    if (e.status === 'draft' || e.status === 'deleted') {
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+      navigate('/', { replace: true });
+    }
   });
 
   function updateResponse(question, response) {

@@ -101,9 +101,7 @@ function TestCard({ test, onStart }) {
         )}
         {finished && test.canStart && (
           <Button variant="secondary" className="flex-1" onClick={() => onStart(test)}>
-            {test.settings.allowRetakes
-              ? 'Retake test'
-              : `Retake (${attempt.attemptNumber}/${test.settings.maxAttempts} used)`}
+            Retake ({attempt.attemptNumber}/{test.settings.maxAttempts} used)
           </Button>
         )}
         {!attempt && !test.canStart && (
