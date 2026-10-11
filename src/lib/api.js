@@ -9,15 +9,20 @@ export class ApiError extends Error {
 }
 
 let unauthorizedHandler = () => {};
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
 /** Called when an authenticated request gets 401 (session expired or replaced). */
 export function setUnauthorizedHandler(handler) {
   unauthorizedHandler = handler;
 }
 
+/**
+ * API requests always go to this page's own origin: the Vite dev server proxies /api to the backend, and in
+ * production vercel.json rewrites /api to it. The httpOnly auth cookie is then a first-party cookie, which browsers
+ * keep. A cookie set by a backend on another site (e.g. *.up.railway.app) is third-party and Safari, iPhones and
+ * private windows drop it.
+ */
 function buildUrl(path, query) {
-  const url = new URL(`/api${path}`, API_BASE_URL || window.location.origin);
+  const url = new URL(`/api${path}`, window.location.origin);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
   }

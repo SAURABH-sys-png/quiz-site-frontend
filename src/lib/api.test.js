@@ -18,7 +18,7 @@ describe('api client', () => {
     expect(init).toMatchObject({ method: 'POST', credentials: 'include', body: '{"a":1}' });
   });
 
-  it('sends requests to the configured API origin', async () => {
+  it('keeps API requests on the page origin even when VITE_API_URL is set (first-party auth cookie)', async () => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com/');
     vi.resetModules();
     const { api: configuredApi } = await import('./api.js');
@@ -28,7 +28,7 @@ describe('api client', () => {
     await configuredApi('/tests');
 
     const [url] = fetchMock.mock.calls[0];
-    expect(new URL(url).origin).toBe('https://api.example.com');
+    expect(new URL(url).origin).toBe(window.location.origin);
     expect(new URL(url).pathname).toBe('/api/tests');
   });
 

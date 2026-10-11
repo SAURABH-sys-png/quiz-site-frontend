@@ -1,11 +1,13 @@
 import { io } from 'socket.io-client';
 import { useEffect, useRef } from 'react';
+import { api } from './api.js';
 
 let socket = null;
 
 /**
- * Origin only: Socket.IO reads a URL path as a namespace, so "https://api.example.com/api" would connect to the
- * "/api" namespace instead of "/". Empty means same origin (the Vite dev proxy).
+ * Where Socket.IO connects. Vercel cannot proxy WebSockets, so in production this is the backend's own origin
+ * (VITE_API_URL); empty means same origin (the Vite dev proxy). Origin only: Socket.IO reads a URL path as a
+ * namespace, so "https://api.example.com/api" would connect to the "/api" namespace instead of "/".
  */
 export function socketOrigin(apiUrl = import.meta.env.VITE_API_URL) {
   if (!apiUrl) return undefined;
@@ -16,10 +18,21 @@ export function socketOrigin(apiUrl = import.meta.env.VITE_API_URL) {
   }
 }
 
-/** Lazily connect (the httpOnly auth cookie authenticates the handshake). */
+/** Fetch a short-lived socket token through the same-origin API (sent with the first-party auth cookie). */
+function socketAuth(callback) {
+  api('/auth/socket-token').then(
+    ({ token }) => callback({ token }),
+    () => callback({}),
+  );
+}
+
+/**
+ * Lazily connect. The auth cookie belongs to the frontend's domain and never reaches a socket host on another
+ * domain, so every (re)connect authenticates with a fresh socket token instead.
+ */
 export function getSocket() {
   if (!socket) {
-    socket = io(socketOrigin(), { withCredentials: true, transports: ['websocket', 'polling'] });
+    socket = io(socketOrigin(), { withCredentials: true, transports: ['websocket', 'polling'], auth: socketAuth });
   }
   return socket;
 }
