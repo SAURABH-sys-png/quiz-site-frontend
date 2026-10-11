@@ -39,6 +39,57 @@ function availableActions(status) {
   return { draft: ['publish', 'start'], published: ['unpublish', 'start', 'end'], live: ['end'], ended: [] }[status];
 }
 
+/** One-tap switch: when on, participants can retake this test (as often as they like) while it is open. */
+function RetakeToggle({ test, onChanged, onError }) {
+  const [busy, setBusy] = useState(false);
+  const on = Boolean(test.settings?.allowRetakes);
+
+  async function toggle() {
+    setBusy(true);
+    onError(null);
+    try {
+      await api(`/admin/tests/${test.id}`, { method: 'PATCH', body: { settings: { allowRetakes: !on } } });
+      onChanged();
+    } catch (err) {
+      onError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={busy}
+      onClick={toggle}
+      title={
+        on
+          ? 'Participants can take this test again after submitting. Tap to turn off.'
+          : 'Tap to let participants take this test again after submitting.'
+      }
+      className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-300 ring-inset hover:bg-slate-50 disabled:opacity-60"
+    >
+      <span
+        className={cx(
+          'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors',
+          on ? 'bg-emerald-500' : 'bg-slate-300',
+        )}
+        aria-hidden="true"
+      >
+        <span
+          className={cx(
+            'absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform',
+            on ? 'translate-x-4.5' : 'translate-x-0.5',
+          )}
+        />
+      </span>
+      Retakes {on ? 'on' : 'off'}
+    </button>
+  );
+}
+
 function QuestionsPanel({ test, questions, refresh }) {
   const navigate = useNavigate();
   const locked = test.status === 'live' || test.status === 'ended';
@@ -262,6 +313,7 @@ export function TestDetailPage() {
         }
         actions={
           <>
+            {t.status !== 'ended' && <RetakeToggle test={t} onChanged={refresh} onError={setActionError} />}
             {(t.status === 'live' || t.status === 'ended') && (
               <ButtonLink to={`/admin/tests/${id}/live`} variant="secondary">
                 Live dashboard

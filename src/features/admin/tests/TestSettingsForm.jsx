@@ -128,7 +128,14 @@ export function TestSettingsForm({ test, onSaved }) {
               </Select>
             )}
           </Field>
-          <Field label="Attempts allowed" hint="The latest attempt counts.">
+          <Field
+            label="Attempts allowed"
+            hint={
+              s.allowRetakes
+                ? 'Unlimited while "Retakes on" is switched on at the top of this page. The latest attempt counts.'
+                : 'The latest attempt counts.'
+            }
+          >
             {(id) => (
               <Input
                 id={id}
@@ -137,6 +144,7 @@ export function TestSettingsForm({ test, onSaved }) {
                 max={20}
                 value={s.maxAttempts}
                 onChange={(e) => setSetting('maxAttempts', e.target.value)}
+                disabled={s.allowRetakes}
               />
             )}
           </Field>
