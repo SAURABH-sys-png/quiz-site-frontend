@@ -2,12 +2,24 @@ import { io } from 'socket.io-client';
 import { useEffect, useRef } from 'react';
 
 let socket = null;
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
-/** Lazily connect (same origin; the httpOnly auth cookie authenticates the handshake). */
+/**
+ * Origin only: Socket.IO reads a URL path as a namespace, so "https://api.example.com/api" would connect to the
+ * "/api" namespace instead of "/". Empty means same origin (the Vite dev proxy).
+ */
+export function socketOrigin(apiUrl = import.meta.env.VITE_API_URL) {
+  if (!apiUrl) return undefined;
+  try {
+    return new URL(apiUrl).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Lazily connect (the httpOnly auth cookie authenticates the handshake). */
 export function getSocket() {
   if (!socket) {
-    socket = io(API_BASE_URL || undefined, { withCredentials: true, transports: ['websocket', 'polling'] });
+    socket = io(socketOrigin(), { withCredentials: true, transports: ['websocket', 'polling'] });
   }
   return socket;
 }

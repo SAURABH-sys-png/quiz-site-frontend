@@ -6,13 +6,14 @@ const NAV = [
   { to: '/admin/tests', label: 'Tests' },
   { to: '/admin/participants', label: 'Participants' },
   { to: '/admin/access-keys', label: 'Access keys' },
+  { to: '/admin/slides', label: 'Slides' },
 ];
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900 text-white">
+      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900 text-white print:hidden">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
           <span className="flex items-center gap-2 font-semibold">
             <span className="grid size-7 place-items-center rounded-lg bg-indigo-500 text-sm">Q</span>
@@ -40,7 +41,7 @@ export function AdminLayout() {
           </Button>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6 print:max-w-none print:p-0">
         <Outlet />
       </main>
     </div>

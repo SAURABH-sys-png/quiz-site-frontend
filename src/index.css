@@ -65,3 +65,105 @@
 .prose-q .blank-marker {
   @apply mx-0.5 inline-block rounded border border-dashed border-indigo-400 bg-indigo-50 px-1.5 font-mono text-xs text-indigo-700;
 }
+
+/* ---- Lecture slides (admin) -------------------------------------------------------------------------------
+   .slide-frame is a size container; everything inside .slide-canvas is sized in em, and the canvas font-size is in
+   container-width units, so a slide scales as one picture: in the page, in full screen and on paper. */
+.slide-stage {
+  @apply relative;
+}
+.slide-frame {
+  container-type: inline-size;
+  @apply w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm;
+}
+@media (min-width: 768px) {
+  .slide-frame {
+    aspect-ratio: 16 / 9;
+  }
+}
+.slide-canvas {
+  font-size: clamp(13px, 1.55cqw, 34px);
+  @apply flex h-full flex-col overflow-y-auto px-[1.4em] pt-[1.2em] pb-[0.8em] leading-normal text-slate-800 md:px-[2.6em] md:pt-[1.8em];
+}
+.slide-title-layout {
+  @apply bg-linear-to-br from-indigo-700 via-indigo-600 to-violet-600 text-white;
+}
+.slide-footer {
+  @apply mt-[1em] flex shrink-0 items-center justify-between gap-[1em] border-t border-slate-200/80 pt-[0.5em] text-[0.62em] text-slate-400;
+}
+.slide-title-layout .slide-footer {
+  @apply border-white/20 text-indigo-200;
+}
+.slide-inline-code {
+  @apply rounded-[0.3em] bg-slate-100 px-[0.3em] py-[0.05em] font-mono text-[0.86em] text-slate-800;
+}
+.slide-code-label {
+  @apply mb-[0.25em] text-[0.62em] font-semibold tracking-[0.08em] text-slate-400 uppercase;
+}
+.slide-code .prose-q {
+  font-size: inherit;
+  line-height: inherit;
+}
+.slide-code .prose-q pre {
+  @apply m-0 border-slate-200 bg-slate-50 px-[1em] py-[0.8em] text-[0.7em] leading-[1.45];
+}
+.slide-output {
+  @apply m-0 overflow-x-auto rounded-[0.5em] bg-slate-900 px-[1em] py-[0.8em] font-mono text-[0.7em] leading-[1.45] text-emerald-300;
+}
+.slide-table {
+  @apply w-full border-collapse text-[0.8em];
+}
+.slide-table th {
+  @apply border-b-2 border-slate-300 bg-slate-50 px-[0.7em] py-[0.45em] text-left font-semibold text-slate-700;
+}
+.slide-table td {
+  @apply border-b border-slate-200 px-[0.7em] py-[0.4em] align-top;
+}
+
+/* Full screen: black letterbox around a 16:9 slide. */
+.slide-stage.is-fullscreen {
+  @apply flex items-center justify-center bg-slate-950;
+}
+.slide-stage.is-fullscreen .slide-frame {
+  width: min(100vw, calc(100vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  @apply rounded-none border-0;
+}
+.slide-fullscreen-nav {
+  @apply absolute right-4 bottom-4 flex items-center gap-3 rounded-full bg-slate-900/70 px-3 py-1 text-sm text-white opacity-30 transition-opacity hover:opacity-100;
+}
+.slide-fullscreen-nav button {
+  @apply px-1 text-xl leading-none disabled:opacity-30;
+}
+
+/* Print / PDF: one slide plus its explanation per page. */
+.print-slide + .print-slide {
+  @apply mt-8;
+}
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  body {
+    @apply bg-white;
+  }
+  .print-slide {
+    break-after: page;
+  }
+  .print-slide + .print-slide {
+    @apply mt-0;
+  }
+  .print-slide .slide-frame {
+    aspect-ratio: 16 / 9;
+    break-inside: avoid;
+    @apply shadow-none;
+  }
+  .print-slide .slide-canvas {
+    font-size: 1.7cqw;
+    @apply overflow-visible;
+  }
+  .print-slide .prose-q pre {
+    @apply whitespace-pre-wrap;
+  }
+}

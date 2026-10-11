@@ -156,10 +156,10 @@ export function TestSettingsForm({ test, onSaved }) {
               checked={s.liveScoreVisible}
               onChange={(e) => setSetting('liveScoreVisible', e.target.checked)}
             />
-            {s.liveScoreVisible && s.feedbackMode === 'after_test' && (
+            {s.liveScoreVisible && s.feedbackMode !== 'immediate' && (
               <Alert tone="warning" className="mt-2">
-                With feedback after the test, a live score still lets participants infer whether each answer was right
-                by watching their score change. Turn off the live score if that matters for this test.
+                Participants can change an answer and watch whether their live score goes up, so they can find the
+                correct option by trial and error before submitting. Turn off the live score for a graded quiz.
               </Alert>
             )}
           </div>
