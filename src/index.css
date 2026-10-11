@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+/* Rendered Markdown (question statements, explanations). */
+.prose-q {
+  @apply text-[15px] leading-relaxed text-slate-800 break-words;
+}
+.prose-q p {
+  @apply my-2;
+}
+.prose-q p:first-child {
+  @apply mt-0;
+}
+.prose-q ul {
+  @apply my-2 list-disc pl-6;
+}
+.prose-q ol {
+  @apply my-2 list-decimal pl-6;
+}
+.prose-q a {
+  @apply text-indigo-600 underline;
+}
+.prose-q strong {
+  @apply font-semibold;
+}
+.prose-q table {
+  @apply my-3 block overflow-x-auto border-collapse text-sm;
+}
+.prose-q th,
+.prose-q td {
+  @apply border border-slate-300 px-2 py-1;
+}
+.prose-q blockquote {
+  @apply my-2 border-l-4 border-slate-300 pl-3 text-slate-600;
+}
+.prose-q :not(pre) > code {
+  @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] text-slate-800;
+}
+.prose-q pre {
+  @apply my-3 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-[13px] leading-snug;
+}
+.prose-q pre code {
+  @apply font-mono;
+}
+/* The highlight.js theme styles .hljs as its own box; the surrounding <pre> already is one. */
+.prose-q pre code.hljs {
+  @apply bg-transparent p-0;
+}
+.prose-q .katex-display {
+  @apply overflow-x-auto overflow-y-hidden py-1;
+}
+.prose-q .blank-marker {
+  @apply mx-0.5 inline-block rounded border border-dashed border-indigo-400 bg-indigo-50 px-1.5 font-mono text-xs text-indigo-700;
+}
