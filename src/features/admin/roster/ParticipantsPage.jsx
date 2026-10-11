@@ -126,7 +126,7 @@ export function ParticipantsPage() {
     <>
       <PageHeader
         title="Participants"
-        subtitle="Only imported participants can sign in. Re-importing updates people by URN and never deletes anyone."
+        subtitle="Students are added automatically the first time they sign in, or by importing a roster. Re-importing updates people by URN and never deletes anyone."
       />
 
       <Card className="mb-5 p-4">

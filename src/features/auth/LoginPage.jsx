@@ -4,29 +4,45 @@ import { useAuth } from '../../app/auth.jsx';
 import { Alert, Button, Field, Input } from '../../components/ui.jsx';
 import { api, errorMessage } from '../../lib/api.js';
 
-/** Participant login: URN, mobile and password only. No Google, no sign-up, no password reset. */
+// Same rule as the server: 2-80 characters, starting with a letter; letters, spaces, . ' - only.
+const NAME_PATTERN = /^\p{L}[\p{L}\p{M} .'-]{1,79}$/u;
+const normalizeName = (value) => value.normalize('NFC').trim().replace(/\s+/g, ' ');
+
+/**
+ * Participant login: URN, name, mobile and password (URN + today's access key). A student's first sign-in
+ * creates their account. No Google, no password reset.
+ */
 export function LoginPage() {
   const { signedIn, notice, clearNotice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ urn: '', mobile: '', password: '' });
+  const [form, setForm] = useState({ urn: '', name: '', mobile: '', password: '' });
   const [error, setError] = useState(null);
+  const [nameError, setNameError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   async function onSubmit(e) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    const name = normalizeName(form.name);
+    if (!NAME_PATTERN.test(name)) {
+      setNameError('Enter your full name using letters only (spaces, dots, hyphens and apostrophes are fine).');
+      return;
+    }
+    setNameError(null);
+    setBusy(true);
     try {
-      const { user } = await api('/auth/participant/login', { method: 'POST', body: form });
+      const { user } = await api('/auth/participant/login', { method: 'POST', body: { ...form, name } });
       signedIn(user);
       const from = location.state?.from;
       navigate(from && !from.startsWith('/admin') ? from : '/', { replace: true });
     } catch (err) {
       setError(
-        err.status === 401 ? 'Invalid credentials. Check your URN, mobile number and password.' : errorMessage(err),
+        err.status === 401
+          ? 'Invalid credentials. Check your URN, mobile number and password. If you signed in before, use the same mobile number.'
+          : errorMessage(err),
       );
     } finally {
       setBusy(false);
@@ -41,7 +57,7 @@ export function LoginPage() {
             Q
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Sign in to your test</h1>
-          <p className="mt-1 text-sm text-slate-500">Use the details registered for this event.</p>
+          <p className="mt-1 text-sm text-slate-500">Enter your URN, name and mobile number.</p>
         </div>
 
         <form
@@ -67,6 +83,21 @@ export function LoginPage() {
                 placeholder="E25B002749"
                 required
                 className="font-mono uppercase"
+              />
+            )}
+          </Field>
+          <Field label="Full name" error={nameError}>
+            {(id) => (
+              <Input
+                id={id}
+                name="name"
+                value={form.name}
+                onChange={update('name')}
+                autoComplete="name"
+                autoCapitalize="words"
+                maxLength={80}
+                placeholder="As it should appear on the results"
+                required
               />
             )}
           </Field>
